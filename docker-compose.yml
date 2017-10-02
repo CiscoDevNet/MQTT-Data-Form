@@ -1,0 +1,43 @@
+version: "3"
+services:
+# MQTT Data Form Web App
+    mqtt_data_form:
+        volumes:
+            - "/var/run/docker.sock:/var/run/docker.sock"
+        ports:
+            - 5656:5656
+        image: ciscodevnet/mqtt_data_form:latest
+        networks:
+            - datasvc
+        environment:
+            dnsrr: "true"
+            MINIO_ACCESS_KEY: "AKIAIOSFODNN7EXAMPLE"
+            MINIO_SECRET_KEY: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        hostname: mqtt_data_form
+        deploy:
+            placement:
+                constraints: [node.role == manager]
+
+    #Minio store for configuration file
+    minio:
+        image: minio/minio
+        networks:
+            - datasvc
+        volumes:
+          - data1:/data
+        ports:
+          - 9000:9000
+        environment:
+            dnsrr: "true"
+            MINIO_ACCESS_KEY: "AKIAIOSFODNN7EXAMPLE"
+            MINIO_SECRET_KEY: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+            no_proxy: "mqtt_data_form"
+        hostname: minio
+        command: server /data
+
+networks:
+    datasvc:
+        driver: overlay
+
+volumes:
+    data1:
