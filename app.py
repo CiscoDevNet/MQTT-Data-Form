@@ -9,11 +9,6 @@ app = Flask(__name__)
 MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY")
 MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
 
-"""minioClient = Minio('play.minio.io:9000',
-                    access_key="Q3AM3UQ867SPQQA43P2F",
-                    secret_key="zuf+tfteSlswRu7BJ86wekitnifILbZam1KYY3TG",
-                    secure=True)"""
-
 docker_client = docker.DockerClient(base_url='unix://var/run/docker.sock')
 
 
@@ -37,19 +32,14 @@ def index():
                             secret_key=MINIO_SECRET_KEY,
                             secure=False)
 
-        if minioClient.bucket_exists("mqtt"):
-            try:
-                minioClient.remove_object("mqtt", "mqtt_config.json")
-            except BaseException as e:
-                pass
-            minioClient.remove_bucket("mqtt")
-            minioClient.make_bucket("mqtt")
-        else:
-            minioClient.make_bucket("mqtt")
-
         mqtt_conf_io = io.BytesIO(mqtt_config.encode())
         io_len = len(mqtt_config)
-        minioClient.put_object("mqtt", "mqtt_config.json", mqtt_conf_io, io_len)
+
+        try:
+            minioClient.put_object("mqtt", "mqtt_config.json", mqtt_conf_io, io_len)
+        except ResponseError as err:
+            minioClient.make_bucket("mqtt")
+            minioClient.put_object("mqtt", "mqtt_config.json", mqtt_conf_io, io_len)
 
         try:
             docker_client.services.create("ciscodevnet/mqtt_forward:latest",
