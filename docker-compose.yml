@@ -24,15 +24,17 @@ services:
         networks:
             - datasvc
         volumes:
-          - data1:/data
+            - data1:/data
         ports:
-          - 9000:9000
+            - 9000:9000
         environment:
             dnsrr: "true"
             MINIO_ACCESS_KEY: "AKIAIOSFODNN7EXAMPLE"
             MINIO_SECRET_KEY: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
             no_proxy: "mqtt_data_form"
         hostname: minio
+        healthcheck:
+            disable: true # Disabling healthcheck due to a bug in minio's healthcheck
         command: server /data
 
 networks:
